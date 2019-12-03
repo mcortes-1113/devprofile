@@ -1,6 +1,9 @@
 var fs = require('fs');
+var inquirer = require('inquirer');
 
-//create prompts for favorite color and username
+//create prompts for favorite color and username.
+
+
 
 //variables to hold user responses
 
