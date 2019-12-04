@@ -1,6 +1,7 @@
-var fs = require('fs');
-var inquirer = require('inquirer');
-var axios = require("axios");
+const axios = require('axios');
+const inquirer = require('inquirer');
+const pdf = require('html-pdf');
+
 
 //variables to hold user responses
 var username;
@@ -8,45 +9,6 @@ var color;
 
 //build url with username variable for github api
 var urlBase = 'https://api.github.com/users/';
-
-//variables to hold api response
-
-var imageSrc;
-var login;
-// * Links to the following:
-//   * User location via Google Maps
-//   * User GitHub profile
-//   * User blog
-var Bio;
-var repoCount;
-var followers;             
-var stars;
-var following;
-
-function printVariables() {
-    console.log(username);
-    console.log(color);
-    console.log(url);
-}
-
-function getData() {
-      axios.get(url).then(function(res) {
-    imageSrc = res.data.avatar_url;
-    login = res.data.login;
-    bio = res.data.bio;
-    repoCount = res.data.public_repos;
-    followers = res.data.followers;
-    stars = res.data.public_gists;
-    following = res.data.following;
-    console.log(imageSrc);
-    console.log(login);
-    console.log(bio);
-    console.log(repoCount);
-    console.log(followers);
-    console.log(stars);
-    console.log(following);
-    });
-}
 
 //create prompts for favorite color and username.
 inquirer
@@ -66,55 +28,48 @@ inquirer
     username = response.username;
     color = response.color;
     url = urlBase + username;
-    getData();
-  });
+    axios.get(url).then(buildHTML);
+});
 
-  //---------------------------------------------------------------------------------
-
-//   const queryUrl = `https://api.github.com/users/${username}/repos?per_page=100`;
-
-//   axios.get(queryUrl).then(function(res) {
-//     const repoNames = res.data.map(function(repo) {
-//       return repo.name;
-//     });
-
-//     const repoNamesStr = repoNames.join("\n");
-
-  //---------------------------------------------------------------
-
-
-//     fs.writeFile("repos.txt", repoNamesStr, function(err) {
-//       if (err) {
-//         throw err;
-//       }
-
-//       console.log(`Saved ${repoNames.length} repos`);
-//     });
-//   });
-
-
-const questions = [
-    `what is your github username?`,
-    `what is your favorite color?`  
-];
-
-function writeToFile(fileName, data) {
-
-// fs.appendFile("log.txt", process.argv[2] + '\n', function(err) {
-
-//   if (err) {
-//     console.log(err);
-//   }
-//   else {
-//     console.log("Commit logged!");
-//   }
-
-};
-
- function init() {
-
+function buildHTML(response) {
+  const {
+    name, 
+    login, 
+    location, 
+    avatar_url,
+    html_url, 
+    bio,
+    public_repos,
+    followers,
+    following,
+    public_gists
+  } = response.data;
+  const html =  
+  `
+    <html>
+    <style>
+    body {
+    background-color: ${color};
+    </style>
+      <body>
+        <h1>${name} | <span>${login}</span></h1>
+        <h2>${location}</h2>
+        <img width="50" height="50" src="${avatar_url}" />
+        <p>Link to Github: ${html_url}</p><br>
+        <p>Bio: ${bio}</p><br>
+        <p>Repositories: ${public_repos}</p><br>
+        <p>Followers: ${followers}</p><br>
+        <p>Following: ${following}</p><br>
+        <p>Stars: ${public_gists}</p>
+      </body>
+    </html>
+  `;
+  writeToPDF(html);
 }
 
-// init();
-
-
+function writeToPDF(html) {
+  const options = { format: 'Letter' };
+  pdf.create(html, options).toFile('./resume.pdf', (err) => {
+    if (err) throw err;
+  });
+} 
